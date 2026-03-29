@@ -88,9 +88,8 @@ const prefToRegion={
 function getFacsByRegion(rid){ return facilities.filter(f=>f.area===rid); }
 
 const map=L.map('map',{zoomControl:true}).setView([36.5,136],5.5);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-  attribution:'© OpenStreetMap contributors © CARTO',
-  subdomains:'abcd',
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors',
   maxZoom:19
 }).addTo(map);
 
@@ -123,23 +122,13 @@ fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
   .then(r=>r.json())
   .then(geo=>{
     geojsonLayer=L.geoJSON(geo,{
-      style:{fillColor:'#c8d4b0',fillOpacity:1,color:'#fff',weight:0.8},
+      style:{fillColor:'transparent',fillOpacity:0,color:'transparent',weight:0},
       onEachFeature:(feature,layer)=>{
         layer.on({
           click:()=>{
             const name=feature.properties.nam_ja||feature.properties.name;
             const rid=prefToRegion[name];
             if(rid) selectRegion(rid);
-          },
-          mouseover:e=>{
-            const name=feature.properties.nam_ja||feature.properties.name;
-            const rid=prefToRegion[name];
-            if(rid&&rid!==selectedRegion) e.target.setStyle({fillColor:'#a8b890'});
-          },
-          mouseout:e=>{
-            const name=feature.properties.nam_ja||feature.properties.name;
-            const rid=prefToRegion[name];
-            if(rid!==selectedRegion) geojsonLayer.resetStyle(e.target);
           }
         });
       }
