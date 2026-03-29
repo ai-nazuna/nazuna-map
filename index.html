@@ -55,12 +55,48 @@ body{font-family:'Segoe UI',sans-serif}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const facilities=[
-  {id:'nijo',name:'Nazuna京都二条城',type:'京町家',rooms:5,area:'kansai',lat:35.0147,lng:135.7534,access:'地下鉄二条駅より徒歩5分',tel:'075-XX-XXXX',desc:'二条城のすぐそばに位置する京町家の宿。'},
-  {id:'gosho',name:'Nazuna京都御所',type:'京町家',rooms:7,area:'kansai',lat:35.0259,lng:135.7624,access:'地下鉄丸太町駅より徒歩5分',tel:'075-XX-XXXX',desc:'京都御所近くの静かな立地の京町家。'},
-  {id:'higashihongan',name:'Nazuna京都東本願寺',type:'町家旅館',rooms:7,area:'kansai',lat:34.9934,lng:135.7566,access:'地下鉄五条駅より徒歩5分',tel:'075-XX-XXXX',desc:'東本願寺まで徒歩圏内の歴史ある町家旅館。'},
-  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家',rooms:23,area:'kansai',lat:34.9872,lng:135.7481,access:'京都駅より徒歩15分',tel:'075-XX-XXXX',desc:'京都の風情ある町家をリノベーションした宿。'},
-  {id:'nishihongan',name:'Nazuna京都西本願寺',type:'町家旅館',rooms:14,area:'kansai',lat:34.9914,lng:135.7519,access:'市バス西本願寺前すぐ',tel:'075-XX-XXXX',desc:'西本願寺境内に隣接した静寂な旅館。'},
-  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'温泉旅館',rooms:9,area:'kanto',lat:35.2563,lng:139.0513,access:'箱根登山鉄道宮ノ下駅より徒歩5分',tel:'0460-XX-XXXX',desc:'箱根の自然に囲まれた温泉旅館。'}
+  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家旅館（路地一体型）',rooms:23,area:'kansai',
+    lat:34.9970,lng:135.7481,
+    access:'阪急「大宮駅」・京福「四条大宮駅」より徒歩約5分',
+    tel:'075-748-0402',
+    desc:'明治期に建てられた町家が並ぶ、約1,400平米のL字型路地一体をリノベーションした全23室の旅館。全室に露天風呂を備え、個性豊かな5つのカテゴリーの客室が並びます。',
+    dinner:'最高級和牛を味わう「和牛料亭 ぶんが」を併設',
+    breakfast:'囲炉裏で焼き上げる厳選食材の和朝食'},
+  {id:'nishihongan',name:'Nazuna京都西本願寺',type:'京町家',rooms:5,area:'kansai',
+    lat:34.9921,lng:135.7522,
+    access:'JR「京都駅」から徒歩約15分（タクシーで約5分）',
+    tel:'075-253-6877',
+    desc:'西本願寺のすぐそばに佇む、静寂に包まれた宿。歴史ある建物の梁や柱を活かしつつ、モダンな意匠を凝らした客室で京都の伝統的な暮らしを肌で感じられます。',
+    breakfast:'体に優しい「京の朝食」をご用意',
+    dinner:'近隣の提携レストランをご案内'},
+  {id:'higashihongan',name:'Nazuna京都東本願寺',type:'京町家',rooms:5,area:'kansai',
+    lat:34.9943,lng:135.7561,
+    access:'地下鉄烏丸線「五条駅」より徒歩約5分、JR「京都駅」より徒歩約10分',
+    tel:'075-253-6877',
+    desc:'東本願寺からほど近い路地に佇む隠れ家。お茶を淹れるひとときから始まる心安らぐ滞在を提案します。広々とした信楽焼の浴槽で日常を忘れてリラックスいただけます。',
+    welcome:'こだわりの抹茶とお菓子でお出迎え',
+    equipment:'全室Wi-Fi・Bluetoothスピーカー完備'},
+  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'高級温泉旅館',rooms:6,area:'kanto',
+    lat:35.2504,lng:139.0631,
+    access:'箱根登山鉄道「宮ノ下駅」より徒歩約5分',
+    tel:'0460-83-8263',
+    desc:'箱根の豊かな自然に囲まれた全6室のみのプライベート空間。自家源泉の露天風呂で宮ノ下の名湯を独り占めできる、贅沢な「大人の隠れ家」です。',
+    dinner:'地元の旬の食材を活かした創作和食コース',
+    ageLimit:'13歳以上（中学生以上）'},
+  {id:'nijo',name:'Nazuna京都二条城',type:'町家旅館',rooms:5,area:'kansai',
+    lat:35.0108,lng:135.7489,
+    access:'地下鉄東西線「二条城前駅」より徒歩約5分',
+    tel:'075-253-6877',
+    desc:'ミシュランガイドにも掲載された実績を持つ名宿。全室にプライベートな半露天風呂を備え、「玉露」「抹茶」などお茶にちなんだ名前の客室が優雅な時間を演出します。',
+    breakfast:'囲炉裏で焼き上げる豪華な「炭火焼朝食」',
+    ageLimit:'13歳以上（中学生以上）'},
+  {id:'gosho',name:'Nazuna京都御所',type:'町家旅館',rooms:7,area:'kansai',
+    lat:35.0228,lng:135.7624,
+    access:'地下鉄烏丸線「丸太町駅」より徒歩約4分',
+    tel:'075-253-6877',
+    desc:'高い天井と開放感あるロビーの囲炉裏が特徴。客室は「柏餅」「羊羹」といった和菓子をイメージしたデザインで、京都の伝統美とモダンな感性が融合しています。',
+    service:'囲炉裏ラウンジでの焼き餅や軽食の提供',
+    equipment:'全室に広々とした檜風呂または露天風呂を完備'},
 ];
 
 const regions={
@@ -172,6 +208,14 @@ function selectFacility(fid){
   document.getElementById('breadcrumb').textContent=`全国 > ${r.name} > ${f.name}`;
   document.getElementById('panel-title').textContent=f.name;
   document.getElementById('panel-sub').textContent=f.type;
+  const extras=[
+    f.breakfast?`<div class="detail-row"><span class="detail-label">朝食</span><span class="detail-val">${f.breakfast}</span></div>`:'',
+    f.dinner?`<div class="detail-row"><span class="detail-label">夕食</span><span class="detail-val">${f.dinner}</span></div>`:'',
+    f.ageLimit?`<div class="detail-row"><span class="detail-label">年齢制限</span><span class="detail-val">${f.ageLimit}</span></div>`:'',
+    f.welcome?`<div class="detail-row"><span class="detail-label">ウェルカム</span><span class="detail-val">${f.welcome}</span></div>`:'',
+    f.service?`<div class="detail-row"><span class="detail-label">サービス</span><span class="detail-val">${f.service}</span></div>`:'',
+    f.equipment?`<div class="detail-row"><span class="detail-label">設備</span><span class="detail-val">${f.equipment}</span></div>`:'',
+  ].join('');
   document.getElementById('panel-body').innerHTML=`
     <button class="back-link" onclick="selectRegion('${f.area}')">← ${r.name}に戻る</button>
     <div class="detail-img">[ 施設写真 ]</div>
@@ -180,9 +224,10 @@ function selectFacility(fid){
     <div class="detail-row"><span class="detail-label">客室数</span><span class="detail-val">${f.rooms}室</span></div>
     <div class="detail-row"><span class="detail-label">アクセス</span><span class="detail-val">${f.access}</span></div>
     <div class="detail-row"><span class="detail-label">電話</span><span class="detail-val">${f.tel}</span></div>
+    ${extras}
     <div style="font-size:12px;color:#5a3a1a;margin-top:10px;line-height:1.6">${f.desc}</div>
     <button class="open-btn">マニュアルを開く</button>`;
-  map.flyTo([f.lat,f.lng],15,{duration:0.8});
+  map.flyTo([f.lat,f.lng],16,{duration:0.8});
 }
 
 function resetMap(){
