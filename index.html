@@ -159,18 +159,38 @@ fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
   .catch(()=>{ document.getElementById('loading').textContent='地図データを読み込めませんでした。'; });
 
 function zoomToRegion(rid){
-  if(!geoFeatures) return;
-  const bounds=getBoundsForRegion(rid, geoFeatures);
-  if(!bounds) return;
+  const facs=getFacsByRegion(rid);
   const w=mapArea.clientWidth, h=mapArea.clientHeight;
-  const [[x0,y0],[x1,y1]]=bounds;
-  const bw=x1-x0, bh=y1-y0;
-  const padding=40;
-  const scale=Math.min((w-padding*2)/bw,(h-padding*2)/bh)*0.85;
-  const tx=w/2-scale*(x0+bw/2);
-  const ty=h/2-scale*(y0+bh/2);
-  svg.transition().duration(750)
-    .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
+
+  if(facs.length>0){
+    const avgLng=facs.reduce((s,f)=>s+f.lng,0)/facs.length;
+    const avgLat=facs.reduce((s,f)=>s+f.lat,0)/facs.length;
+    const [cx,cy]=projection([avgLng,avgLat]);
+
+    const kmPerDeg=111;
+    const radiusKm=12;
+    const dLng=radiusKm/kmPerDeg;
+    const [x0]=projection([avgLng-dLng,avgLat]);
+    const [x1]=projection([avgLng+dLng,avgLat]);
+    const pxRadius=Math.abs(x1-x0)/2;
+    const scale=Math.min(w,h)/(pxRadius*2)*0.7;
+
+    const tx=w/2-scale*cx;
+    const ty=h/2-scale*cy;
+    svg.transition().duration(750)
+      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
+  } else {
+    if(!geoFeatures) return;
+    const bounds=getBoundsForRegion(rid, geoFeatures);
+    if(!bounds) return;
+    const [[x0,y0],[x1,y1]]=bounds;
+    const bw=x1-x0, bh=y1-y0;
+    const scale=Math.min((w-80)/bw,(h-80)/bh)*0.85;
+    const tx=w/2-scale*(x0+bw/2);
+    const ty=h/2-scale*(y0+bh/2);
+    svg.transition().duration(750)
+      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
+  }
 }
 
 function getBoundsForRegion(rid, features){
