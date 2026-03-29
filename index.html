@@ -88,9 +88,10 @@ const prefToRegion={
 function getFacsByRegion(rid){ return facilities.filter(f=>f.area===rid); }
 
 const map=L.map('map',{zoomControl:true}).setView([36.5,136],5.5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap contributors',
-  maxZoom:18
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OpenStreetMap contributors © CARTO',
+  subdomains:'abcd',
+  maxZoom:19
 }).addTo(map);
 
 let geojsonLayer,markers=[],selectedRegion=null;
@@ -147,15 +148,7 @@ fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
     renderAreaList();
   });
 
-function highlightRegion(rid){
-  if(!geojsonLayer) return;
-  geojsonLayer.eachLayer(layer=>{
-    const name=layer.feature.properties.nam_ja||layer.feature.properties.name;
-    const r=prefToRegion[name];
-    if(r===rid) layer.setStyle({fillColor:'#8b1a1a',fillOpacity:0.4});
-    else geojsonLayer.resetStyle(layer);
-  });
-}
+function highlightRegion(rid){}
 
 function selectRegion(rid){
   selectedRegion=rid;
