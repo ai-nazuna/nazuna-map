@@ -1,1 +1,221 @@
-# nazuna-map
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
+#wrap{display:flex;height:100vh;min-height:520px}
+#map-area{flex:1;position:relative;overflow:hidden;background:#d4e8f0}
+#map-area svg{width:100%;height:100%}
+.prefecture{fill:#c8d4b0;stroke:#fff;stroke-width:0.5;cursor:pointer;transition:fill 0.2s}
+.prefecture:hover{fill:#a8b890}
+#panel{width:260px;background:#fff;border-left:1px solid #d4c090;display:flex;flex-direction:column;flex-shrink:0}
+#panel-header{background:#8b1a1a;color:#fff;padding:12px 14px}
+#panel-title{font-size:14px;font-weight:600}
+#panel-sub{font-size:11px;opacity:0.8;margin-top:2px}
+#breadcrumb{font-size:11px;color:#8b6a4a;padding:8px 14px;border-bottom:1px solid #e8d8a0;background:#fffdf5}
+#panel-body{padding:14px;flex:1;overflow-y:auto}
+.area-btn{width:100%;text-align:left;padding:9px 12px;border:1px solid #e0d0a0;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px;background:#fffdf5;color:#3a2010;display:flex;align-items:center;justify-content:space-between;font-family:'Segoe UI',sans-serif}
+.area-btn:hover{border-color:#8b1a1a;color:#8b1a1a}
+.area-count{font-size:11px;background:#8b1a1a;color:#fff;border-radius:10px;padding:1px 7px}
+.fac-card{border:1px solid #e0d0a0;border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;background:#fffdf5}
+.fac-card:hover{border-color:#8b1a1a}
+.fac-name{font-size:13px;font-weight:600;color:#2a1a0a}
+.fac-type{font-size:11px;color:#8b6a4a;margin-top:2px}
+.back-link{font-size:12px;color:#8b1a1a;cursor:pointer;padding:0 0 10px;display:block;background:none;border:none;font-family:'Segoe UI',sans-serif}
+.hint{font-size:12px;color:#8b6a4a;line-height:1.6;margin-top:4px}
+.detail-img{width:100%;height:80px;background:#d4b88a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#5a3a1a;margin-bottom:12px}
+.detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e8d8a0;font-size:12px}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:#8b6a4a}
+.detail-val{color:#2a1a0a;font-weight:500;text-align:right;max-width:160px}
+.open-btn{width:100%;padding:8px;background:#8b1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-top:12px;font-family:'Segoe UI',sans-serif}
+#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#5a3a1a;background:rgba(255,255,255,0.8);padding:12px 20px;border-radius:8px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="map-area">
+    <div id="loading">地図を読み込み中...</div>
+    <svg id="svg-map"></svg>
+  </div>
+  <div id="panel">
+    <div id="panel-header">
+      <div id="panel-title">Nazuna 施設マップ</div>
+      <div id="panel-sub">エリアまたは施設を選択</div>
+    </div>
+    <div id="breadcrumb">全国</div>
+    <div id="panel-body">
+      <p class="hint">地図のエリアをクリックすると施設一覧が表示されます。</p>
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:600;color:#8b6a4a;margin-bottom:8px">エリア一覧</div>
+        <div id="area-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+const facilities=[
+  {id:'nijo',name:'Nazuna京都二条城',type:'京町家',rooms:5,area:'kansai',lat:35.0147,lng:135.7534,access:'地下鉄二条駅より徒歩5分',tel:'075-XX-XXXX',desc:'二条城のすぐそばに位置する京町家の宿。'},
+  {id:'gosho',name:'Nazuna京都御所',type:'京町家',rooms:7,area:'kansai',lat:35.0259,lng:135.7624,access:'地下鉄丸太町駅より徒歩5分',tel:'075-XX-XXXX',desc:'京都御所近くの静かな立地の京町家。'},
+  {id:'higashihongan',name:'Nazuna京都東本願寺',type:'町家旅館',rooms:7,area:'kansai',lat:34.9934,lng:135.7566,access:'地下鉄五条駅より徒歩5分',tel:'075-XX-XXXX',desc:'東本願寺まで徒歩圏内の歴史ある町家旅館。'},
+  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家',rooms:23,area:'kansai',lat:34.9872,lng:135.7481,access:'京都駅より徒歩15分',tel:'075-XX-XXXX',desc:'京都の風情ある町家をリノベーションした宿。'},
+  {id:'nishihongan',name:'Nazuna京都西本願寺',type:'町家旅館',rooms:14,area:'kansai',lat:34.9914,lng:135.7519,access:'市バス西本願寺前すぐ',tel:'075-XX-XXXX',desc:'西本願寺境内に隣接した静寂な旅館。'},
+  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'温泉旅館',rooms:9,area:'kanto',lat:35.2563,lng:139.0513,access:'箱根登山鉄道宮ノ下駅より徒歩5分',tel:'0460-XX-XXXX',desc:'箱根の自然に囲まれた温泉旅館。'}
+];
+
+const regions={
+  hokkaido:{name:'北海道',prefs:['北海道']},
+  tohoku:{name:'東北',prefs:['青森県','岩手県','宮城県','秋田県','山形県','福島県']},
+  kanto:{name:'関東',prefs:['茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県']},
+  chubu:{name:'中部',prefs:['新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県']},
+  kansai:{name:'関西',prefs:['三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県']},
+  chugoku:{name:'中国',prefs:['鳥取県','島根県','岡山県','広島県','山口県']},
+  shikoku:{name:'四国',prefs:['徳島県','香川県','愛媛県','高知県']},
+  kyushu:{name:'九州・沖縄',prefs:['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県']}
+};
+
+function getRegionByName(name){
+  for(const [k,v] of Object.entries(regions)){
+    if(v.prefs.includes(name)) return k;
+  }
+  return null;
+}
+
+function getFacsByRegion(rid){
+  return facilities.filter(f=>f.area===rid);
+}
+
+let selectedRegion=null;
+const svgEl=document.getElementById('svg-map');
+const mapArea=document.getElementById('map-area');
+const svg=d3.select('#svg-map');
+let projection,path,gMap,gPins;
+
+fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+  .then(r=>{if(!r.ok)throw new Error('fetch failed');return r.json();})
+  .then(geo=>{
+    document.getElementById('loading').style.display='none';
+    const w=mapArea.clientWidth, h=mapArea.clientHeight;
+    projection=d3.geoMercator().center([136.5,35.5]).scale(w*1.6).translate([w*0.42,h*0.52]);
+    path=d3.geoPath().projection(projection);
+    svg.attr('width',w).attr('height',h);
+    gMap=svg.append('g');
+    gPins=svg.append('g');
+
+    gMap.selectAll('path')
+      .data(geo.features)
+      .enter().append('path')
+      .attr('class','prefecture')
+      .attr('d',path)
+      .on('click',function(event,d){
+        const name=d.properties.nam_ja||d.properties.name;
+        const rid=getRegionByName(name);
+        if(rid) selectRegion(rid);
+      })
+      .on('mouseover',function(event,d){
+        const name=d.properties.nam_ja||d.properties.name;
+        const rid=getRegionByName(name);
+        if(rid&&rid!==selectedRegion) d3.select(this).style('fill','#a8b890');
+      })
+      .on('mouseout',function(event,d){
+        const name=d.properties.nam_ja||d.properties.name;
+        const rid=getRegionByName(name);
+        if(rid!==selectedRegion) d3.select(this).style('fill','');
+      });
+
+    renderPins(null);
+    renderAreaList();
+  })
+  .catch(e=>{
+    document.getElementById('loading').textContent='地図データを読み込めませんでした。ページを再読み込みしてください。';
+    console.error(e);
+  });
+
+function renderPins(rid){
+  if(!gPins||!projection) return;
+  gPins.selectAll('*').remove();
+  const facs=rid?getFacsByRegion(rid):facilities;
+  facs.forEach(f=>{
+    const [x,y]=projection([f.lng,f.lat]);
+    const g=gPins.append('g').style('cursor','pointer').on('click',()=>selectFacility(f.id));
+    g.append('circle').attr('cx',x).attr('cy',y).attr('r',7).attr('fill','#8b1a1a').attr('stroke','#fff').attr('stroke-width',1.5);
+    const label=f.name.replace('Nazuna京都','').replace('Nazuna箱根','').replace('Nazuna','').trim();
+    const lw=label.length*8+12;
+    g.append('rect').attr('x',x-lw/2).attr('y',y-26).attr('width',lw).attr('height',14).attr('rx',3).attr('fill','rgba(255,255,255,0.92)').attr('stroke','#8b1a1a').attr('stroke-width',0.5);
+    g.append('text').attr('x',x).attr('y',y-15).attr('text-anchor','middle').style('font-size','9px').style('fill','#8b1a1a').style('font-weight','600').style('font-family',"'Segoe UI',sans-serif").text(label);
+  });
+}
+
+function highlightRegion(rid){
+  if(!gMap) return;
+  gMap.selectAll('path').each(function(d){
+    const name=d.properties.nam_ja||d.properties.name;
+    const r=getRegionByName(name);
+    d3.select(this).style('fill',r===rid?'#8b1a1a':'').style('opacity',r===rid?0.45:1);
+  });
+}
+
+function selectRegion(rid){
+  selectedRegion=rid;
+  highlightRegion(rid);
+  renderPins(rid);
+  const r=regions[rid];
+  const facs=getFacsByRegion(rid);
+  document.getElementById('panel-title').textContent=r.name;
+  document.getElementById('panel-sub').textContent=`施設数: ${facs.length}件`;
+  document.getElementById('breadcrumb').textContent=`全国 > ${r.name}`;
+  const body=document.getElementById('panel-body');
+  if(facs.length===0){
+    body.innerHTML=`<button class="back-link" onclick="resetMap()">← 全国に戻る</button><p class="hint">このエリアには施設がまだ登録されていません。</p>`;
+  } else {
+    body.innerHTML=`<button class="back-link" onclick="resetMap()">← 全国に戻る</button>`+
+      facs.map(f=>`<div class="fac-card" onclick="selectFacility('${f.id}')"><div class="fac-name">${f.name}</div><div class="fac-type">${f.type} · ${f.rooms}室</div></div>`).join('');
+  }
+}
+
+function selectFacility(fid){
+  const f=facilities.find(x=>x.id===fid);
+  if(!f) return;
+  const r=regions[f.area];
+  document.getElementById('breadcrumb').textContent=`全国 > ${r.name} > ${f.name}`;
+  document.getElementById('panel-title').textContent=f.name;
+  document.getElementById('panel-sub').textContent=f.type;
+  document.getElementById('panel-body').innerHTML=`
+    <button class="back-link" onclick="selectRegion('${f.area}')">← ${r.name}に戻る</button>
+    <div class="detail-img">[ 施設写真 ]</div>
+    <div style="font-size:14px;font-weight:600;color:#2a1a0a;margin-bottom:4px">${f.name}</div>
+    <div style="font-size:12px;color:#8b6a4a;margin-bottom:12px">${f.type}</div>
+    <div class="detail-row"><span class="detail-label">客室数</span><span class="detail-val">${f.rooms}室</span></div>
+    <div class="detail-row"><span class="detail-label">アクセス</span><span class="detail-val">${f.access}</span></div>
+    <div class="detail-row"><span class="detail-label">電話</span><span class="detail-val">${f.tel}</span></div>
+    <div style="font-size:12px;color:#5a3a1a;margin-top:10px;line-height:1.6">${f.desc}</div>
+    <button class="open-btn">マニュアルを開く</button>`;
+}
+
+function resetMap(){
+  selectedRegion=null;
+  if(gMap) gMap.selectAll('path').style('fill','').style('opacity',1);
+  renderPins(null);
+  document.getElementById('panel-title').textContent='Nazuna 施設マップ';
+  document.getElementById('panel-sub').textContent='エリアまたは施設を選択';
+  document.getElementById('breadcrumb').textContent='全国';
+  document.getElementById('panel-body').innerHTML=`<p class="hint">地図のエリアをクリックすると施設一覧が表示されます。</p><div style="margin-top:14px"><div style="font-size:11px;font-weight:600;color:#8b6a4a;margin-bottom:8px">エリア一覧</div><div id="area-list"></div></div>`;
+  renderAreaList();
+}
+
+function renderAreaList(){
+  const el=document.getElementById('area-list');
+  if(!el) return;
+  el.innerHTML=Object.entries(regions).map(([k,v])=>{
+    const cnt=getFacsByRegion(k).length;
+    return `<button class="area-btn" onclick="selectRegion('${k}')">${v.name}${cnt?`<span class="area-count">${cnt}</span>`:''}</button>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
