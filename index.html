@@ -3,20 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
+body{font-family:'Segoe UI',sans-serif}
 #wrap{display:flex;height:100vh;min-height:520px}
-#map-area{flex:1;position:relative;overflow:hidden;background:#c8e0ee}
-#map-area svg{width:100%;height:100%}
-.prefecture{fill:#c8d4b0;stroke:#fff;stroke-width:0.5;cursor:pointer;transition:fill 0.2s}
-.prefecture:hover{fill:#a8b890}
-.prefecture.region-active{fill:#8b1a1a;opacity:0.4}
-#panel{width:260px;background:#fff;border-left:1px solid #d4c090;display:flex;flex-direction:column;flex-shrink:0}
+#map{flex:1}
+#panel{width:260px;background:#fff;border-left:1px solid #d4c090;display:flex;flex-direction:column;flex-shrink:0;z-index:1000;position:relative}
 #panel-header{background:#8b1a1a;color:#fff;padding:12px 14px}
 #panel-title{font-size:14px;font-weight:600}
 #panel-sub{font-size:11px;opacity:0.8;margin-top:2px}
-#breadcrumb{font-size:11px;color:#8b6a4a;padding:8px 14px;border-bottom:1px solid #e8d8a0;background:#fffdf5;display:flex;align-items:center;gap:6px}
+#breadcrumb{font-size:11px;color:#8b6a4a;padding:8px 14px;border-bottom:1px solid #e8d8a0;background:#fffdf5}
 #panel-body{padding:14px;flex:1;overflow-y:auto}
 .area-btn{width:100%;text-align:left;padding:9px 12px;border:1px solid #e0d0a0;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px;background:#fffdf5;color:#3a2010;display:flex;align-items:center;justify-content:space-between;font-family:'Segoe UI',sans-serif}
 .area-btn:hover{border-color:#8b1a1a;color:#8b1a1a}
@@ -25,7 +22,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
 .fac-card:hover{border-color:#8b1a1a}
 .fac-name{font-size:13px;font-weight:600;color:#2a1a0a}
 .fac-type{font-size:11px;color:#8b6a4a;margin-top:2px}
-.back-link{font-size:12px;color:#8b1a1a;cursor:pointer;padding:0 0 10px;display:block;background:none;border:none;font-family:'Segoe UI',sans-serif}
+.back-link{font-size:12px;color:#8b1a1a;cursor:pointer;padding:0 0 10px;display:block;background:none;border:none;font-family:'Segoe UI',sans-serif;text-align:left}
 .hint{font-size:12px;color:#8b6a4a;line-height:1.6;margin-top:4px}
 .detail-img{width:100%;height:80px;background:#d4b88a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#5a3a1a;margin-bottom:12px}
 .detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e8d8a0;font-size:12px}
@@ -33,17 +30,12 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
 .detail-label{color:#8b6a4a}
 .detail-val{color:#2a1a0a;font-weight:500;text-align:right;max-width:160px}
 .open-btn{width:100%;padding:8px;background:#8b1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-top:12px;font-family:'Segoe UI',sans-serif}
-#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#5a3a1a;background:rgba(255,255,255,0.9);padding:12px 20px;border-radius:8px}
-#zoom-hint{position:absolute;bottom:12px;left:12px;font-size:11px;color:#5a3a1a;background:rgba(255,255,255,0.8);padding:6px 10px;border-radius:6px;pointer-events:none}
+.custom-pin{background:none;border:none}
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="map-area">
-    <div id="loading">地図を読み込み中...</div>
-    <svg id="svg-map"></svg>
-    <div id="zoom-hint">エリアをクリックするとズームします</div>
-  </div>
+  <div id="map"></div>
   <div id="panel">
     <div id="panel-header">
       <div id="panel-title">Nazuna 施設マップ</div>
@@ -60,7 +52,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const facilities=[
   {id:'nijo',name:'Nazuna京都二条城',type:'京町家',rooms:5,area:'kansai',lat:35.0147,lng:135.7534,access:'地下鉄二条駅より徒歩5分',tel:'075-XX-XXXX',desc:'二条城のすぐそばに位置する京町家の宿。'},
@@ -72,185 +64,113 @@ const facilities=[
 ];
 
 const regions={
-  hokkaido:{name:'北海道',prefs:['北海道'],center:[143,43],scale:3},
-  tohoku:{name:'東北',prefs:['青森県','岩手県','宮城県','秋田県','山形県','福島県'],center:[140.5,39.5],scale:4},
-  kanto:{name:'関東',prefs:['茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県'],center:[139.5,36],scale:5},
-  chubu:{name:'中部',prefs:['新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県'],center:[137,36],scale:4},
-  kansai:{name:'関西',prefs:['三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県'],center:[135.5,34.8],scale:6},
-  chugoku:{name:'中国',prefs:['鳥取県','島根県','岡山県','広島県','山口県'],center:[133,34.5],scale:5},
-  shikoku:{name:'四国',prefs:['徳島県','香川県','愛媛県','高知県'],center:[133.5,33.5],scale:6},
-  kyushu:{name:'九州・沖縄',prefs:['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'],center:[130.5,32],scale:4}
+  hokkaido:{name:'北海道',lat:43.5,lng:143,zoom:6},
+  tohoku:{name:'東北',lat:39.5,lng:140.5,zoom:7},
+  kanto:{name:'関東',lat:35.6,lng:139.5,zoom:10},
+  chubu:{name:'中部',lat:36,lng:137,zoom:7},
+  kansai:{name:'関西',lat:35.01,lng:135.76,zoom:13},
+  chugoku:{name:'中国',lat:34.5,lng:133,zoom:8},
+  shikoku:{name:'四国',lat:33.5,lng:133.5,zoom:8},
+  kyushu:{name:'九州・沖縄',lat:32,lng:130.5,zoom:7}
 };
 
-function getRegionByName(name){
-  for(const [k,v] of Object.entries(regions)) if(v.prefs.includes(name)) return k;
-  return null;
-}
+const prefToRegion={
+  '北海道':'hokkaido',
+  '青森県':'tohoku','岩手県':'tohoku','宮城県':'tohoku','秋田県':'tohoku','山形県':'tohoku','福島県':'tohoku',
+  '茨城県':'kanto','栃木県':'kanto','群馬県':'kanto','埼玉県':'kanto','千葉県':'kanto','東京都':'kanto','神奈川県':'kanto',
+  '新潟県':'chubu','富山県':'chubu','石川県':'chubu','福井県':'chubu','山梨県':'chubu','長野県':'chubu','岐阜県':'chubu','静岡県':'chubu','愛知県':'chubu',
+  '三重県':'kansai','滋賀県':'kansai','京都府':'kansai','大阪府':'kansai','兵庫県':'kansai','奈良県':'kansai','和歌山県':'kansai',
+  '鳥取県':'chugoku','島根県':'chugoku','岡山県':'chugoku','広島県':'chugoku','山口県':'chugoku',
+  '徳島県':'shikoku','香川県':'shikoku','愛媛県':'shikoku','高知県':'shikoku',
+  '福岡県':'kyushu','佐賀県':'kyushu','長崎県':'kyushu','熊本県':'kyushu','大分県':'kyushu','宮崎県':'kyushu','鹿児島県':'kyushu','沖縄県':'kyushu'
+};
+
 function getFacsByRegion(rid){ return facilities.filter(f=>f.area===rid); }
 
-let selectedRegion=null;
-let geoFeatures=null;
-const mapArea=document.getElementById('map-area');
-const svg=d3.select('#svg-map');
-let projection,path,gMap,gPins,zoom;
+const map=L.map('map',{zoomControl:true}).setView([36.5,136],5.5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors',
+  maxZoom:18
+}).addTo(map);
 
-fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
-  .then(r=>{if(!r.ok)throw new Error();return r.json();})
-  .then(geo=>{
-    document.getElementById('loading').style.display='none';
-    const w=mapArea.clientWidth, h=mapArea.clientHeight;
+let geojsonLayer,markers=[],selectedRegion=null;
 
-    projection=d3.geoMercator().center([136.5,35.5]).scale(w*1.6).translate([w*0.42,h*0.52]);
-    path=d3.geoPath().projection(projection);
-    svg.attr('width',w).attr('height',h);
+const pinIcon=L.divIcon({
+  className:'',
+  html:`<div style="width:14px;height:14px;background:#8b1a1a;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>`,
+  iconSize:[14,14],iconAnchor:[7,7]
+});
 
-    zoom=d3.zoom()
-      .scaleExtent([1,12])
-      .on('zoom', e=>{
-        gMap.attr('transform', e.transform);
-        gPins.attr('transform', e.transform);
-        gPins.selectAll('circle').attr('r', 7/e.transform.k);
-        gPins.selectAll('rect').each(function(){
-          const el=d3.select(this);
-          const origW=parseFloat(el.attr('data-w')||el.attr('width'));
-          el.attr('data-w',origW);
-          el.attr('width', origW/e.transform.k)
-            .attr('x', -origW/e.transform.k/2)
-            .attr('y', -26/e.transform.k)
-            .attr('height', 14/e.transform.k)
-            .attr('rx', 3/e.transform.k);
-        });
-        gPins.selectAll('text')
-          .attr('y', -15/e.transform.k)
-          .style('font-size', 9/e.transform.k+'px');
-        gMap.selectAll('.prefecture').attr('stroke-width', 0.5/e.transform.k);
-      });
-
-    svg.call(zoom);
-
-    gMap=svg.append('g');
-    gPins=svg.append('g');
-
-    gMap.selectAll('path')
-      .data(geo.features)
-      .enter().append('path')
-      .attr('class','prefecture')
-      .attr('d',path)
-      .on('click',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid) selectRegion(rid);
-      })
-      .on('mouseover',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid&&rid!==selectedRegion) d3.select(this).style('fill','#a8b890');
-      })
-      .on('mouseout',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid!==selectedRegion) d3.select(this).style('fill','');
-      });
-
-    geoFeatures=geo.features;
-    renderPins(null);
-    renderAreaList();
-  })
-  .catch(()=>{ document.getElementById('loading').textContent='地図データを読み込めませんでした。'; });
-
-function zoomToRegion(rid){
-  const facs=getFacsByRegion(rid);
-  const w=mapArea.clientWidth, h=mapArea.clientHeight;
-
-  if(facs.length>0){
-    const avgLng=facs.reduce((s,f)=>s+f.lng,0)/facs.length;
-    const avgLat=facs.reduce((s,f)=>s+f.lat,0)/facs.length;
-    const [cx,cy]=projection([avgLng,avgLat]);
-
-    const kmPerDeg=111;
-    const radiusKm=12;
-    const dLng=radiusKm/kmPerDeg;
-    const [x0]=projection([avgLng-dLng,avgLat]);
-    const [x1]=projection([avgLng+dLng,avgLat]);
-    const pxRadius=Math.abs(x1-x0)/2;
-    const scale=Math.min(w,h)/(pxRadius*2)*0.7;
-
-    const tx=w/2-scale*cx;
-    const ty=h/2-scale*cy;
-    svg.transition().duration(750)
-      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
-  } else {
-    if(!geoFeatures) return;
-    const bounds=getBoundsForRegion(rid, geoFeatures);
-    if(!bounds) return;
-    const [[x0,y0],[x1,y1]]=bounds;
-    const bw=x1-x0, bh=y1-y0;
-    const scale=Math.min((w-80)/bw,(h-80)/bh)*0.85;
-    const tx=w/2-scale*(x0+bw/2);
-    const ty=h/2-scale*(y0+bh/2);
-    svg.transition().duration(750)
-      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
-  }
+function clearMarkers(){
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
 }
 
-function getBoundsForRegion(rid, features){
-  const r=regions[rid];
-  const regionFeatures=features.filter(d=>{
-    const name=d.properties.nam_ja||d.properties.name;
-    return r.prefs.includes(name);
-  });
-  if(regionFeatures.length===0) return null;
-  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  regionFeatures.forEach(d=>{
-    const b=path.bounds(d);
-    x0=Math.min(x0,b[0][0]); y0=Math.min(y0,b[0][1]);
-    x1=Math.max(x1,b[1][0]); y1=Math.max(y1,b[1][1]);
-  });
-  return [[x0,y0],[x1,y1]];
-}
-
-function zoomOut(){
-  svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
-}
-
-function renderPins(rid){
-  if(!gPins||!projection) return;
-  gPins.selectAll('*').remove();
+function addMarkers(rid){
+  clearMarkers();
   const facs=rid?getFacsByRegion(rid):facilities;
   facs.forEach(f=>{
-    const [x,y]=projection([f.lng,f.lat]);
-    const g=gPins.append('g').style('cursor','pointer').on('click',function(event){
-      event.stopPropagation();
-      selectFacility(f.id);
-    });
-    g.append('circle').attr('cx',x).attr('cy',y).attr('r',7).attr('fill','#8b1a1a').attr('stroke','#fff').attr('stroke-width',1.5);
-    const label=f.name.replace('Nazuna京都','').replace('Nazuna箱根','').replace('Nazuna','').trim();
-    const lw=label.length*8+12;
-    g.append('rect').attr('x',x-lw/2).attr('y',y-26).attr('width',lw).attr('data-w',lw).attr('height',14).attr('rx',3)
-      .attr('fill','rgba(255,255,255,0.92)').attr('stroke','#8b1a1a').attr('stroke-width',0.5);
-    g.append('text').attr('x',x).attr('y',y-15).attr('text-anchor','middle')
-      .style('font-size','9px').style('fill','#8b1a1a').style('font-weight','600')
-      .style('font-family',"'Segoe UI',sans-serif").text(label);
+    const m=L.marker([f.lat,f.lng],{icon:pinIcon})
+      .addTo(map)
+      .bindTooltip(f.name.replace('Nazuna京都','').replace('Nazuna箱根','').replace('Nazuna',''),{permanent:true,direction:'top',offset:[0,-8],className:'',opacity:1})
+      .on('click',()=>selectFacility(f.id));
+    markers.push(m);
   });
 }
 
+fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+  .then(r=>r.json())
+  .then(geo=>{
+    geojsonLayer=L.geoJSON(geo,{
+      style:{fillColor:'#c8d4b0',fillOpacity:1,color:'#fff',weight:0.8},
+      onEachFeature:(feature,layer)=>{
+        layer.on({
+          click:()=>{
+            const name=feature.properties.nam_ja||feature.properties.name;
+            const rid=prefToRegion[name];
+            if(rid) selectRegion(rid);
+          },
+          mouseover:e=>{
+            const name=feature.properties.nam_ja||feature.properties.name;
+            const rid=prefToRegion[name];
+            if(rid&&rid!==selectedRegion) e.target.setStyle({fillColor:'#a8b890'});
+          },
+          mouseout:e=>{
+            const name=feature.properties.nam_ja||feature.properties.name;
+            const rid=prefToRegion[name];
+            if(rid!==selectedRegion) geojsonLayer.resetStyle(e.target);
+          }
+        });
+      }
+    }).addTo(map);
+    addMarkers(null);
+    renderAreaList();
+  });
+
 function highlightRegion(rid){
-  if(!gMap) return;
-  gMap.selectAll('path').each(function(d){
-    const name=d.properties.nam_ja||d.properties.name;
-    const r=getRegionByName(name);
-    d3.select(this).style('fill',r===rid?'#8b1a1a':'').style('opacity',r===rid?0.4:1);
+  if(!geojsonLayer) return;
+  geojsonLayer.eachLayer(layer=>{
+    const name=layer.feature.properties.nam_ja||layer.feature.properties.name;
+    const r=prefToRegion[name];
+    if(r===rid) layer.setStyle({fillColor:'#8b1a1a',fillOpacity:0.4});
+    else geojsonLayer.resetStyle(layer);
   });
 }
 
 function selectRegion(rid){
-  if(selectedRegion===rid) return;
   selectedRegion=rid;
   highlightRegion(rid);
-  zoomToRegion(rid);
-  renderPins(rid);
+  addMarkers(rid);
   const r=regions[rid];
   const facs=getFacsByRegion(rid);
+
+  let lat=r.lat, lng=r.lng, zoom=r.zoom;
+  if(facs.length>0){
+    lat=facs.reduce((s,f)=>s+f.lat,0)/facs.length;
+    lng=facs.reduce((s,f)=>s+f.lng,0)/facs.length;
+  }
+  map.flyTo([lat,lng],zoom,{duration:0.8});
+
   document.getElementById('panel-title').textContent=r.name;
   document.getElementById('panel-sub').textContent=`施設数: ${facs.length}件`;
   document.getElementById('breadcrumb').textContent=`全国 > ${r.name}`;
@@ -280,13 +200,14 @@ function selectFacility(fid){
     <div class="detail-row"><span class="detail-label">電話</span><span class="detail-val">${f.tel}</span></div>
     <div style="font-size:12px;color:#5a3a1a;margin-top:10px;line-height:1.6">${f.desc}</div>
     <button class="open-btn">マニュアルを開く</button>`;
+  map.flyTo([f.lat,f.lng],15,{duration:0.8});
 }
 
 function resetMap(){
   selectedRegion=null;
-  if(gMap) gMap.selectAll('path').style('fill','').style('opacity',1);
-  zoomOut();
-  renderPins(null);
+  if(geojsonLayer) geojsonLayer.eachLayer(l=>geojsonLayer.resetStyle(l));
+  addMarkers(null);
+  map.flyTo([36.5,136],5.5,{duration:0.8});
   document.getElementById('panel-title').textContent='Nazuna 施設マップ';
   document.getElementById('panel-sub').textContent='エリアまたは施設を選択';
   document.getElementById('breadcrumb').textContent='全国';
