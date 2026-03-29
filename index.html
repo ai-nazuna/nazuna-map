@@ -55,48 +55,48 @@ body{font-family:'Segoe UI',sans-serif}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const facilities=[
-  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家旅館（路地一体型）',rooms:23,area:'kansai',
-    lat:34.9970,lng:135.7481,
+  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家旅館',rooms:23,area:'kansai',
+    lat:34.9978,lng:135.7488,
     access:'阪急「大宮駅」・京福「四条大宮駅」より徒歩約5分',
     tel:'075-748-0402',
-    desc:'明治期に建てられた町家が並ぶ、約1,400平米のL字型路地一体をリノベーションした全23室の旅館。全室に露天風呂を備え、個性豊かな5つのカテゴリーの客室が並びます。',
-    dinner:'最高級和牛を味わう「和牛料亭 ぶんが」を併設',
-    breakfast:'囲炉裏で焼き上げる厳選食材の和朝食'},
+    desc:'明治期の町家が並ぶ路地一体をリノベーションした、全23室の旅館街。夕暮れに提灯が灯る幻想的な路地を抜け、全室露天風呂付きのプライベート空間で贅沢な時間を過ごせます。',
+    dinner:'和牛料亭「ぶんが」',breakfast:'囲炉裏での炭火焼',
+    img:'https://www.nazuna.co/wp-content/uploads/tsubakidori_top.jpg'},
   {id:'nishihongan',name:'Nazuna京都西本願寺',type:'京町家',rooms:5,area:'kansai',
-    lat:34.9921,lng:135.7522,
-    access:'JR「京都駅」から徒歩約15分（タクシーで約5分）',
-    tel:'075-253-6877',
-    desc:'西本願寺のすぐそばに佇む、静寂に包まれた宿。歴史ある建物の梁や柱を活かしつつ、モダンな意匠を凝らした客室で京都の伝統的な暮らしを肌で感じられます。',
-    breakfast:'体に優しい「京の朝食」をご用意',
-    dinner:'近隣の提携レストランをご案内'},
+    lat:34.9896,lng:135.7519,
+    access:'地下鉄「五条駅」より徒歩約11分、JR「京都駅」より徒歩約14分',
+    tel:'075-585-2810',
+    desc:'現代作庭家・重森千青氏監修の枯山水の石庭を望む、静寂の宿。石庭を意匠に取り入れた客室風呂で、京都の精神性と現代美が融合した滞在を堪能いただけます。',
+    breakfast:'京の朝食',
+    img:'https://www.nazuna.co/wp-content/uploads/nishihonganji_top.jpg'},
   {id:'higashihongan',name:'Nazuna京都東本願寺',type:'京町家',rooms:5,area:'kansai',
-    lat:34.9943,lng:135.7561,
-    access:'地下鉄烏丸線「五条駅」より徒歩約5分、JR「京都駅」より徒歩約10分',
-    tel:'075-253-6877',
-    desc:'東本願寺からほど近い路地に佇む隠れ家。お茶を淹れるひとときから始まる心安らぐ滞在を提案します。広々とした信楽焼の浴槽で日常を忘れてリラックスいただけます。',
-    welcome:'こだわりの抹茶とお菓子でお出迎え',
-    equipment:'全室Wi-Fi・Bluetoothスピーカー完備'},
-  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'高級温泉旅館',rooms:6,area:'kanto',
-    lat:35.2504,lng:139.0631,
-    access:'箱根登山鉄道「宮ノ下駅」より徒歩約5分',
-    tel:'0460-83-8263',
-    desc:'箱根の豊かな自然に囲まれた全6室のみのプライベート空間。自家源泉の露天風呂で宮ノ下の名湯を独り占めできる、贅沢な「大人の隠れ家」です。',
-    dinner:'地元の旬の食材を活かした創作和食コース',
-    ageLimit:'13歳以上（中学生以上）'},
+    lat:34.9943,lng:135.7554,
+    access:'JR「京都駅」より徒歩約8分（タクシー約5分）',
+    tel:'075-585-2670',
+    desc:'東本願寺にほど近い、お茶をテーマにした隠れ家的な宿。茶室のような趣の客室と大型の信楽焼風呂を全室に備え、日常を離れた「ラグジュアリーな余白」を提供します。',
+    breakfast:'あり',
+    img:'https://www.nazuna.co/wp-content/uploads/higashihonganji_top.jpg'},
+  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'温泉旅館',rooms:8,area:'kanto',
+    lat:35.2342,lng:139.0412,
+    access:'箱根登山バス「木賀温泉入口」下車すぐ',
+    tel:'0460-83-3915',
+    desc:'箱根の自然と歴史を感じる、全8室の温泉旅館。自家源泉の露天風呂を全室に配し、京都の伝統を受け継ぐホスピタリティと箱根の名湯が織りなす極上の休日を過ごせます。',
+    dinner:'創作和食',breakfast:'あり',ageLimit:'中学生以上',
+    img:'https://www.nazuna.co/wp-content/uploads/hakonemiyashita_top.jpg'},
   {id:'nijo',name:'Nazuna京都二条城',type:'町家旅館',rooms:5,area:'kansai',
-    lat:35.0108,lng:135.7489,
-    access:'地下鉄東西線「二条城前駅」より徒歩約5分',
+    lat:35.0136,lng:135.7488,
+    access:'地下鉄東西線「二条城前駅」より徒歩約8分',
     tel:'075-253-6877',
-    desc:'ミシュランガイドにも掲載された実績を持つ名宿。全室にプライベートな半露天風呂を備え、「玉露」「抹茶」などお茶にちなんだ名前の客室が優雅な時間を演出します。',
-    breakfast:'囲炉裏で焼き上げる豪華な「炭火焼朝食」',
-    ageLimit:'13歳以上（中学生以上）'},
+    desc:'元米蔵を美しく改装した、ミシュラン掲載のラグジュアリー宿。お茶をコンセプトにした5つの客室はすべて半露天風呂付き。囲炉裏での朝食も人気です。',
+    breakfast:'囲炉裏炭火焼',ageLimit:'中学生以上',
+    img:'https://www.nazuna.co/wp-content/uploads/nijojo_top.jpg'},
   {id:'gosho',name:'Nazuna京都御所',type:'町家旅館',rooms:7,area:'kansai',
-    lat:35.0228,lng:135.7624,
+    lat:35.0228,lng:135.7607,
     access:'地下鉄烏丸線「丸太町駅」より徒歩約4分',
-    tel:'075-253-6877',
-    desc:'高い天井と開放感あるロビーの囲炉裏が特徴。客室は「柏餅」「羊羹」といった和菓子をイメージしたデザインで、京都の伝統美とモダンな感性が融合しています。',
-    service:'囲炉裏ラウンジでの焼き餅や軽食の提供',
-    equipment:'全室に広々とした檜風呂または露天風呂を完備'},
+    tel:'075-708-6870',
+    desc:'かつての材木屋を再生した大型町家。「和菓子」をテーマにした遊び心あふれる客室と、開放感のある囲炉裏ラウンジが、心温まる滞在を演出します。',
+    service:'囲炉裏ラウンジ（軽食・ドリンク）',dinner:'提携店案内',
+    img:'https://www.nazuna.co/wp-content/uploads/gosho_top.jpg'},
 ];
 
 const regions={
@@ -218,7 +218,9 @@ function selectFacility(fid){
   ].join('');
   document.getElementById('panel-body').innerHTML=`
     <button class="back-link" onclick="selectRegion('${f.area}')">← ${r.name}に戻る</button>
-    <div class="detail-img">[ 施設写真 ]</div>
+    <div style="width:100%;height:140px;border-radius:8px;margin-bottom:12px;overflow:hidden;background:#d4b88a">
+      ${f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='[ 施設写真 ]';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center'">` : '[ 施設写真 ]'}
+    </div>
     <div style="font-size:14px;font-weight:600;color:#2a1a0a;margin-bottom:4px">${f.name}</div>
     <div style="font-size:12px;color:#8b6a4a;margin-bottom:12px">${f.type}</div>
     <div class="detail-row"><span class="detail-label">客室数</span><span class="detail-val">${f.rooms}室</span></div>
