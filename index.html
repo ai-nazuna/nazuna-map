@@ -133,8 +133,9 @@ let geojsonLayer,markers=[],selectedRegion=null;
 
 const pinIcon=L.divIcon({
   className:'',
-  html:`<div style="width:14px;height:14px;background:#8b1a1a;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>`,
-  iconSize:[14,14],iconAnchor:[7,7]
+  html:`<div style="width:14px;height:14px;background:#8b1a1a;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);transform:translate(-50%,-50%)"></div>`,
+  iconSize:[0,0],
+  iconAnchor:[0,0]
 });
 
 function clearMarkers(){
