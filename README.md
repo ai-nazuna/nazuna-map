@@ -236,7 +236,6 @@ function selectFacility(fid){
     <div class="detail-row"><span class="detail-label">年齢制限</span><span class="detail-val">${f.ageLimit||'制限なし'}</span></div>
     <div class="detail-row"><span class="detail-label">朝食</span><span class="detail-val">${f.breakfast||'－'}</span></div>
     <div class="detail-row"><span class="detail-label">夕食</span><span class="detail-val">${f.dinner||'－'}</span></div>
-    <div style="font-size:12px;color:#5a3a1a;margin-top:10px;line-height:1.6">${f.desc}</div>
     <button class="open-btn" onclick="window.open('${f.url}','_blank')">公式サイトを開く</button>`;
   map.flyTo([f.lat,f.lng],16,{duration:0.8});
 }
