@@ -3,15 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
+body{font-family:'Segoe UI',sans-serif}
 #wrap{display:flex;height:100vh;min-height:520px}
-#map-area{flex:1;position:relative;overflow:hidden;background:#d4e8f0}
-#map-area svg{width:100%;height:100%}
-.prefecture{fill:#c8d4b0;stroke:#fff;stroke-width:0.5;cursor:pointer;transition:fill 0.2s}
-.prefecture:hover{fill:#a8b890}
-#panel{width:260px;background:#fff;border-left:1px solid #d4c090;display:flex;flex-direction:column;flex-shrink:0}
+#map{flex:1}
+#panel{width:260px;background:#fff;border-left:1px solid #d4c090;display:flex;flex-direction:column;flex-shrink:0;z-index:1000;position:relative}
 #panel-header{background:#8b1a1a;color:#fff;padding:12px 14px}
 #panel-title{font-size:14px;font-weight:600}
 #panel-sub{font-size:11px;opacity:0.8;margin-top:2px}
@@ -24,7 +22,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
 .fac-card:hover{border-color:#8b1a1a}
 .fac-name{font-size:13px;font-weight:600;color:#2a1a0a}
 .fac-type{font-size:11px;color:#8b6a4a;margin-top:2px}
-.back-link{font-size:12px;color:#8b1a1a;cursor:pointer;padding:0 0 10px;display:block;background:none;border:none;font-family:'Segoe UI',sans-serif}
+.back-link{font-size:12px;color:#8b1a1a;cursor:pointer;padding:0 0 10px;display:block;background:none;border:none;font-family:'Segoe UI',sans-serif;text-align:left}
 .hint{font-size:12px;color:#8b6a4a;line-height:1.6;margin-top:4px}
 .detail-img{width:100%;height:80px;background:#d4b88a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#5a3a1a;margin-bottom:12px}
 .detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e8d8a0;font-size:12px}
@@ -32,15 +30,12 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
 .detail-label{color:#8b6a4a}
 .detail-val{color:#2a1a0a;font-weight:500;text-align:right;max-width:160px}
 .open-btn{width:100%;padding:8px;background:#8b1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-top:12px;font-family:'Segoe UI',sans-serif}
-#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#5a3a1a;background:rgba(255,255,255,0.8);padding:12px 20px;border-radius:8px}
+.custom-pin{background:none;border:none}
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="map-area">
-    <div id="loading">地図を読み込み中...</div>
-    <svg id="svg-map"></svg>
-  </div>
+  <div id="map"></div>
   <div id="panel">
     <div id="panel-header">
       <div id="panel-title">Nazuna 施設マップ</div>
@@ -57,115 +52,150 @@ body{font-family:'Segoe UI',sans-serif;background:#f0ede4}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const facilities=[
-  {id:'nijo',name:'Nazuna京都二条城',type:'京町家',rooms:5,area:'kansai',lat:35.0147,lng:135.7534,access:'地下鉄二条駅より徒歩5分',tel:'075-XX-XXXX',desc:'二条城のすぐそばに位置する京町家の宿。'},
-  {id:'gosho',name:'Nazuna京都御所',type:'京町家',rooms:7,area:'kansai',lat:35.0259,lng:135.7624,access:'地下鉄丸太町駅より徒歩5分',tel:'075-XX-XXXX',desc:'京都御所近くの静かな立地の京町家。'},
-  {id:'higashihongan',name:'Nazuna京都東本願寺',type:'町家旅館',rooms:7,area:'kansai',lat:34.9934,lng:135.7566,access:'地下鉄五条駅より徒歩5分',tel:'075-XX-XXXX',desc:'東本願寺まで徒歩圏内の歴史ある町家旅館。'},
-  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家',rooms:23,area:'kansai',lat:34.9872,lng:135.7481,access:'京都駅より徒歩15分',tel:'075-XX-XXXX',desc:'京都の風情ある町家をリノベーションした宿。'},
-  {id:'nishihongan',name:'Nazuna京都西本願寺',type:'町家旅館',rooms:14,area:'kansai',lat:34.9914,lng:135.7519,access:'市バス西本願寺前すぐ',tel:'075-XX-XXXX',desc:'西本願寺境内に隣接した静寂な旅館。'},
-  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'温泉旅館',rooms:9,area:'kanto',lat:35.2563,lng:139.0513,access:'箱根登山鉄道宮ノ下駅より徒歩5分',tel:'0460-XX-XXXX',desc:'箱根の自然に囲まれた温泉旅館。'}
+  {id:'gosho',name:'Nazuna京都御所',type:'町家旅館',rooms:7,area:'kansai',
+    lat:35.01607648310042,lng:135.75714813929065,
+    access:'地下鉄烏丸線「丸太町駅」より徒歩約4分',
+    tel:'075-708-6870',
+    desc:'かつての材木屋を再生した大型町家。「和菓子」をテーマにした遊び心あふれる客室と、開放感のある囲炉裏ラウンジが、心温まる滞在を演出します。',
+    service:'囲炉裏ラウンジ（軽食・ドリンク）',dinner:'提携店案内',
+    img:'https://www.nazuna.co/wp-content/uploads/2022/08/o4zhubazcidoekqk0qpd.jpg',
+    url:'https://www.nazuna.co/property/gosho/'},
+  {id:'tsubaki',name:'Nazuna京都椿通',type:'町家旅館',rooms:23,area:'kansai',
+    lat:35.000219932036245,lng:135.7486524392904,
+    access:'阪急「大宮駅」・京福「四条大宮駅」より徒歩約5分',
+    tel:'075-748-0402',
+    desc:'明治期の町家が並ぶ路地一体をリノベーションした、全23室の旅館街。夕暮れに提灯が灯る幻想的な路地を抜け、全室露天風呂付きのプライベート空間で贅沢な時間を過ごせます。',
+    dinner:'和牛料亭「ぶんが」',breakfast:'囲炉裏での炭火焼',
+    img:'https://www.nazuna.co/wp-content/uploads/2022/07/ihw4btig9zjhhdmgauwo.jpg',
+    url:'https://www.nazuna.co/property/tsubakidori/'},
+  {id:'nijo',name:'Nazuna京都二条城',type:'町家旅館',rooms:5,area:'kansai',
+    lat:35.01490188587717,lng:135.75340959511095,
+    access:'地下鉄東西線「二条城前駅」より徒歩約8分',
+    tel:'075-253-6877',
+    desc:'元米蔵を美しく改装した、ミシュラン掲載のラグジュアリー宿。お茶をコンセプトにした5つの客室はすべて半露天風呂付き。囲炉裏での朝食も人気です。',
+    breakfast:'囲炉裏炭火焼',ageLimit:'中学生以上',
+    img:'https://www.nazuna.co/wp-content/uploads/2022/08/imnx3cna7qmc72pnubb6.jpg',
+    url:'https://www.nazuna.co/property/nijojo/'},
+  {id:'higashihongan',name:'Nazuna京都東本願寺',type:'京町家',rooms:5,area:'kansai',
+    lat:34.99218375900377,lng:135.76042162381557,
+    access:'JR「京都駅」より徒歩約8分（タクシー約5分）',
+    tel:'075-585-2670',
+    desc:'東本願寺にほど近い、お茶をテーマにした隠れ家的な宿。茶室のような趣の客室と大型の信楽焼風呂を全室に備え、日常を離れた「ラグジュアリーな余白」を提供します。',
+    breakfast:'あり',dinner:'なし',ageLimit:'制限なし',
+    img:'https://www.nazuna.co/wp-content/uploads/2024/09/KEI07355-%E8%A0%91%EF%BD%B7%E8%9B%B9%E3%83%BBNR-1.jpg',
+    url:'https://www.nazuna.co/property/higashihonganji/'},
+  {id:'nishihongan',name:'Nazuna京都西本願寺',type:'京町家',rooms:5,area:'kansai',
+    lat:34.99220381370509,lng:135.75387716812585,
+    access:'地下鉄「五条駅」より徒歩約11分、JR「京都駅」より徒歩約14分',
+    tel:'075-585-2810',
+    desc:'現代作庭家・重森千青氏監修の枯山水の石庭を望む、静寂の宿。石庭を意匠に取り入れた客室風呂で、京都の精神性と現代美が融合した滞在を堪能いただけます。',
+    breakfast:'京の朝食',
+    img:'https://www.nazuna.co/wp-content/uploads/2025/08/K1S02337-scaled.jpg',
+    url:'https://www.nazuna.co/property/nishihonganji/'},
+  {id:'hakone',name:'Nazuna箱根宮ノ下',type:'温泉旅館',rooms:8,area:'kanto',
+    lat:35.245982686286645,lng:139.05600368347757,
+    access:'箱根登山バス「木賀温泉入口」下車すぐ',
+    tel:'0460-83-3915',
+    desc:'箱根の自然と歴史を感じる、全8室の温泉旅館。自家源泉の露天風呂を全室に配し、京都の伝統を受け継ぐホスピタリティと箱根の名湯が織りなす極上の休日を過ごせます。',
+    dinner:'創作和食',breakfast:'あり',ageLimit:'中学生以上',
+    img:'https://www.nazuna.co/wp-content/uploads/2025/03/%E5%A4%96%E8%A6%B301-scaled.jpg',
+    url:'https://www.nazuna.co/property/hakonemiyashita/'},
 ];
 
 const regions={
-  hokkaido:{name:'北海道',prefs:['北海道']},
-  tohoku:{name:'東北',prefs:['青森県','岩手県','宮城県','秋田県','山形県','福島県']},
-  kanto:{name:'関東',prefs:['茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県']},
-  chubu:{name:'中部',prefs:['新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県']},
-  kansai:{name:'関西',prefs:['三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県']},
-  chugoku:{name:'中国',prefs:['鳥取県','島根県','岡山県','広島県','山口県']},
-  shikoku:{name:'四国',prefs:['徳島県','香川県','愛媛県','高知県']},
-  kyushu:{name:'九州・沖縄',prefs:['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県']}
+  hokkaido:{name:'北海道',lat:43.5,lng:143,zoom:6},
+  tohoku:{name:'東北',lat:39.5,lng:140.5,zoom:7},
+  kanto:{name:'関東',lat:35.6,lng:139.5,zoom:10},
+  chubu:{name:'中部',lat:36,lng:137,zoom:7},
+  kansai:{name:'関西',lat:35.01,lng:135.76,zoom:13},
+  chugoku:{name:'中国',lat:34.5,lng:133,zoom:8},
+  shikoku:{name:'四国',lat:33.5,lng:133.5,zoom:8},
+  kyushu:{name:'九州・沖縄',lat:32,lng:130.5,zoom:7}
 };
 
-function getRegionByName(name){
-  for(const [k,v] of Object.entries(regions)){
-    if(v.prefs.includes(name)) return k;
-  }
-  return null;
+const prefToRegion={
+  '北海道':'hokkaido',
+  '青森県':'tohoku','岩手県':'tohoku','宮城県':'tohoku','秋田県':'tohoku','山形県':'tohoku','福島県':'tohoku',
+  '茨城県':'kanto','栃木県':'kanto','群馬県':'kanto','埼玉県':'kanto','千葉県':'kanto','東京都':'kanto','神奈川県':'kanto',
+  '新潟県':'chubu','富山県':'chubu','石川県':'chubu','福井県':'chubu','山梨県':'chubu','長野県':'chubu','岐阜県':'chubu','静岡県':'chubu','愛知県':'chubu',
+  '三重県':'kansai','滋賀県':'kansai','京都府':'kansai','大阪府':'kansai','兵庫県':'kansai','奈良県':'kansai','和歌山県':'kansai',
+  '鳥取県':'chugoku','島根県':'chugoku','岡山県':'chugoku','広島県':'chugoku','山口県':'chugoku',
+  '徳島県':'shikoku','香川県':'shikoku','愛媛県':'shikoku','高知県':'shikoku',
+  '福岡県':'kyushu','佐賀県':'kyushu','長崎県':'kyushu','熊本県':'kyushu','大分県':'kyushu','宮崎県':'kyushu','鹿児島県':'kyushu','沖縄県':'kyushu'
+};
+
+function getFacsByRegion(rid){ return facilities.filter(f=>f.area===rid); }
+
+const map=L.map('map',{zoomControl:true}).setView([36.5,136],5.5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors',
+  maxZoom:19
+}).addTo(map);
+
+let geojsonLayer,markers=[],selectedRegion=null;
+
+const pinIcon=L.divIcon({
+  className:'',
+  html:`<div style="width:14px;height:14px;background:#8b1a1a;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);transform:translate(-50%,-50%)"></div>`,
+  iconSize:[0,0],
+  iconAnchor:[0,0]
+});
+
+function clearMarkers(){
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
 }
 
-function getFacsByRegion(rid){
-  return facilities.filter(f=>f.area===rid);
-}
-
-let selectedRegion=null;
-const svgEl=document.getElementById('svg-map');
-const mapArea=document.getElementById('map-area');
-const svg=d3.select('#svg-map');
-let projection,path,gMap,gPins;
-
-fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
-  .then(r=>{if(!r.ok)throw new Error('fetch failed');return r.json();})
-  .then(geo=>{
-    document.getElementById('loading').style.display='none';
-    const w=mapArea.clientWidth, h=mapArea.clientHeight;
-    projection=d3.geoMercator().center([136.5,35.5]).scale(w*1.6).translate([w*0.42,h*0.52]);
-    path=d3.geoPath().projection(projection);
-    svg.attr('width',w).attr('height',h);
-    gMap=svg.append('g');
-    gPins=svg.append('g');
-
-    gMap.selectAll('path')
-      .data(geo.features)
-      .enter().append('path')
-      .attr('class','prefecture')
-      .attr('d',path)
-      .on('click',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid) selectRegion(rid);
-      })
-      .on('mouseover',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid&&rid!==selectedRegion) d3.select(this).style('fill','#a8b890');
-      })
-      .on('mouseout',function(event,d){
-        const name=d.properties.nam_ja||d.properties.name;
-        const rid=getRegionByName(name);
-        if(rid!==selectedRegion) d3.select(this).style('fill','');
-      });
-
-    renderPins(null);
-    renderAreaList();
-  })
-  .catch(e=>{
-    document.getElementById('loading').textContent='地図データを読み込めませんでした。ページを再読み込みしてください。';
-    console.error(e);
-  });
-
-function renderPins(rid){
-  if(!gPins||!projection) return;
-  gPins.selectAll('*').remove();
+function addMarkers(rid){
+  clearMarkers();
   const facs=rid?getFacsByRegion(rid):facilities;
   facs.forEach(f=>{
-    const [x,y]=projection([f.lng,f.lat]);
-    const g=gPins.append('g').style('cursor','pointer').on('click',()=>selectFacility(f.id));
-    g.append('circle').attr('cx',x).attr('cy',y).attr('r',7).attr('fill','#8b1a1a').attr('stroke','#fff').attr('stroke-width',1.5);
-    const label=f.name.replace('Nazuna京都','').replace('Nazuna箱根','').replace('Nazuna','').trim();
-    const lw=label.length*8+12;
-    g.append('rect').attr('x',x-lw/2).attr('y',y-26).attr('width',lw).attr('height',14).attr('rx',3).attr('fill','rgba(255,255,255,0.92)').attr('stroke','#8b1a1a').attr('stroke-width',0.5);
-    g.append('text').attr('x',x).attr('y',y-15).attr('text-anchor','middle').style('font-size','9px').style('fill','#8b1a1a').style('font-weight','600').style('font-family',"'Segoe UI',sans-serif").text(label);
+    const m=L.marker([f.lat,f.lng],{icon:pinIcon})
+      .addTo(map)
+      .bindTooltip(f.name.replace('Nazuna京都','').replace('Nazuna箱根','').replace('Nazuna',''),{permanent:true,direction:'top',offset:[0,-8],className:'',opacity:1})
+      .on('click',()=>selectFacility(f.id));
+    markers.push(m);
   });
 }
 
-function highlightRegion(rid){
-  if(!gMap) return;
-  gMap.selectAll('path').each(function(d){
-    const name=d.properties.nam_ja||d.properties.name;
-    const r=getRegionByName(name);
-    d3.select(this).style('fill',r===rid?'#8b1a1a':'').style('opacity',r===rid?0.45:1);
+fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+  .then(r=>r.json())
+  .then(geo=>{
+    geojsonLayer=L.geoJSON(geo,{
+      style:{fillColor:'transparent',fillOpacity:0,color:'transparent',weight:0},
+      onEachFeature:(feature,layer)=>{
+        layer.on({
+          click:()=>{
+            const name=feature.properties.nam_ja||feature.properties.name;
+            const rid=prefToRegion[name];
+            if(rid) selectRegion(rid);
+          }
+        });
+      }
+    }).addTo(map);
+    addMarkers(null);
+    renderAreaList();
   });
-}
+
+function highlightRegion(rid){}
 
 function selectRegion(rid){
   selectedRegion=rid;
   highlightRegion(rid);
-  renderPins(rid);
+  addMarkers(rid);
   const r=regions[rid];
   const facs=getFacsByRegion(rid);
+
+  let lat=r.lat, lng=r.lng, zoom=r.zoom;
+  if(facs.length>0){
+    lat=facs.reduce((s,f)=>s+f.lat,0)/facs.length;
+    lng=facs.reduce((s,f)=>s+f.lng,0)/facs.length;
+  }
+  map.flyTo([lat,lng],zoom,{duration:0.8});
+
   document.getElementById('panel-title').textContent=r.name;
   document.getElementById('panel-sub').textContent=`施設数: ${facs.length}件`;
   document.getElementById('breadcrumb').textContent=`全国 > ${r.name}`;
@@ -185,22 +215,37 @@ function selectFacility(fid){
   document.getElementById('breadcrumb').textContent=`全国 > ${r.name} > ${f.name}`;
   document.getElementById('panel-title').textContent=f.name;
   document.getElementById('panel-sub').textContent=f.type;
+  const extras=[
+    f.breakfast?`<div class="detail-row"><span class="detail-label">朝食</span><span class="detail-val">${f.breakfast}</span></div>`:'',
+    f.dinner?`<div class="detail-row"><span class="detail-label">夕食</span><span class="detail-val">${f.dinner}</span></div>`:'',
+    f.ageLimit?`<div class="detail-row"><span class="detail-label">年齢制限</span><span class="detail-val">${f.ageLimit}</span></div>`:'',
+    f.welcome?`<div class="detail-row"><span class="detail-label">ウェルカム</span><span class="detail-val">${f.welcome}</span></div>`:'',
+    f.service?`<div class="detail-row"><span class="detail-label">サービス</span><span class="detail-val">${f.service}</span></div>`:'',
+    f.equipment?`<div class="detail-row"><span class="detail-label">設備</span><span class="detail-val">${f.equipment}</span></div>`:'',
+  ].join('');
   document.getElementById('panel-body').innerHTML=`
     <button class="back-link" onclick="selectRegion('${f.area}')">← ${r.name}に戻る</button>
-    <div class="detail-img">[ 施設写真 ]</div>
+    <div style="width:100%;height:140px;border-radius:8px;margin-bottom:12px;overflow:hidden;background:#d4b88a">
+      ${f.img?`<img src="${f.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='[ 施設写真 ]';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center'">`:' [ 施設写真 ]'}
+    </div>
     <div style="font-size:14px;font-weight:600;color:#2a1a0a;margin-bottom:4px">${f.name}</div>
     <div style="font-size:12px;color:#8b6a4a;margin-bottom:12px">${f.type}</div>
     <div class="detail-row"><span class="detail-label">客室数</span><span class="detail-val">${f.rooms}室</span></div>
     <div class="detail-row"><span class="detail-label">アクセス</span><span class="detail-val">${f.access}</span></div>
-    <div class="detail-row"><span class="detail-label">電話</span><span class="detail-val">${f.tel}</span></div>
+    <div class="detail-row"><span class="detail-label">電話</span><span class="detail-val">${f.tel||'－'}</span></div>
+    <div class="detail-row"><span class="detail-label">年齢制限</span><span class="detail-val">${f.ageLimit||'制限なし'}</span></div>
+    <div class="detail-row"><span class="detail-label">朝食</span><span class="detail-val">${f.breakfast||'－'}</span></div>
+    <div class="detail-row"><span class="detail-label">夕食</span><span class="detail-val">${f.dinner||'－'}</span></div>
     <div style="font-size:12px;color:#5a3a1a;margin-top:10px;line-height:1.6">${f.desc}</div>
-    <button class="open-btn">マニュアルを開く</button>`;
+    <button class="open-btn" onclick="window.open('${f.url}','_blank')">公式サイトを開く</button>`;
+  map.flyTo([f.lat,f.lng],16,{duration:0.8});
 }
 
 function resetMap(){
   selectedRegion=null;
-  if(gMap) gMap.selectAll('path').style('fill','').style('opacity',1);
-  renderPins(null);
+  if(geojsonLayer) geojsonLayer.eachLayer(l=>geojsonLayer.resetStyle(l));
+  addMarkers(null);
+  map.flyTo([36.5,136],5.5,{duration:0.8});
   document.getElementById('panel-title').textContent='Nazuna 施設マップ';
   document.getElementById('panel-sub').textContent='エリアまたは施設を選択';
   document.getElementById('breadcrumb').textContent='全国';
